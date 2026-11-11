@@ -8,7 +8,7 @@ from dependency_graph import build_dependency_graph
 
 
 class DependencyGraphTests(unittest.TestCase):
-    def setUp(self):
+    def set_up(self):
         self.repository = {
             "A": ["B", "C"],
             "B": ["D"],
@@ -20,9 +20,12 @@ class DependencyGraphTests(unittest.TestCase):
         return self.repository.get(package_name, [])
 
     def test_build_graph(self):
+        self.set_up()
+
         graph = build_dependency_graph(
             "A", self.get_dependencies, 2
         )
+
         self.assertEqual(
             graph,
             {
@@ -34,15 +37,21 @@ class DependencyGraphTests(unittest.TestCase):
         )
 
     def test_max_depth_zero(self):
+        self.set_up()
+
         graph = build_dependency_graph(
             "A", self.get_dependencies, 0
         )
+
         self.assertEqual(graph, {"A": []})
 
     def test_max_depth_one(self):
+        self.set_up()
+
         graph = build_dependency_graph(
             "A", self.get_dependencies, 1
         )
+
         self.assertEqual(
             graph,
             {"A": ["B", "C"], "B": [], "C": []},
@@ -61,12 +70,17 @@ class DependencyGraphTests(unittest.TestCase):
         )
 
     def test_package_without_dependencies(self):
+        self.set_up()
+
         graph = build_dependency_graph(
             "D", self.get_dependencies, 5
         )
+
         self.assertEqual(graph, {"D": []})
 
     def test_negative_depth(self):
+        self.set_up()
+
         with self.assertRaises(ValueError):
             build_dependency_graph(
                 "A", self.get_dependencies, -1
