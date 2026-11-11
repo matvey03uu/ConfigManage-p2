@@ -30,6 +30,7 @@ def download_package_index(
     with GzipFile(fileobj=BytesIO(compressed_data)) as archive:
         return archive.read()
 
+
 def parse_package_paragraph(paragraph: str) -> dict[str, str]:
     """Разбирает один блок информации о пакете."""
     fields = {}
@@ -66,6 +67,23 @@ def find_dependencies_in_index(
 
     return None
 
+
+def find_any_package_dependencies_in_index(
+    index_data: bytes,
+    package_name: str,
+) -> str | None:
+    """Ищет пакет по имени без ограничения версии."""
+    text = index_data.decode("utf-8", errors="replace")
+
+    for paragraph in text.split("\n\n"):
+        fields = parse_package_paragraph(paragraph)
+
+        if fields.get("Package") == package_name:
+            return fields.get("Depends", "")
+
+    return None
+
+
 def find_package(
     repository_url: str,
     package_name: str,
@@ -93,3 +111,27 @@ def find_package(
         f"Пакет {package_name} версии {package_version} "
         "не найден в индексах выбранного репозитория"
     )
+
+
+def find_package_dependencies(
+    repository_url: str,
+    package_name: str,
+) -> str:
+    """Получает зависимости пакета без ограничения его версии."""
+    for component in COMPONENTS:
+        try:
+            index_data = download_package_index(repository_url, component)
+        except HTTPError as error:
+            if error.code == HTTP_NOT_FOUND:
+                continue
+            raise
+
+        dependencies = find_any_package_dependencies_in_index(
+            index_data,
+            package_name,
+        )
+
+        if dependencies is not None:
+            return dependencies
+
+    raise LookupError(f"Пакет {package_name} не найден в репозитории")
